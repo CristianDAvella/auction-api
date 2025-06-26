@@ -2,6 +2,7 @@ from db import db
 from bson import ObjectId
 from schemas import Auction, Bid
 from datetime import datetime
+from dateutil.parser import parse
 
 def auction_helper(auction) -> dict:
     auction["id"] = str(auction["_id"])
@@ -63,9 +64,22 @@ async def update_bid(auction_id: str, user: str, new_amount: float):
 
 async def get_winner(auction_id: str):
     auction = await db.auctions.find_one({"_id": ObjectId(auction_id)})
-    if auction and datetime.utcnow() >= auction["end_time"]:
-        if not auction["bids"]:
-            return None
-        winner = max(auction["bids"], key=lambda x: x["amount"])
-        return winner
-    return None
+    if not auction or not auction.get("bids"):
+        return None
+
+    end_time = auction["end_time"]
+    if isinstance(end_time, str):
+        end_time = parse(end_time)
+
+    winner = max(auction["bids"], key=lambda x: x["amount"])
+
+    if datetime.utcnow() < end_time:
+        return {
+            "message": f"El usuario {winner['user']} está en la cabeza de la subasta con ${winner['amount']}"
+        }
+    else:
+        return {
+            "message": f"Vendido al usuario {winner['user']} por ${winner['amount']}"
+        }
+
+

@@ -55,7 +55,8 @@ async def modify_bid(auction_id: str, user: str, data: UpdateBid):
 
 @router.get("/{auction_id}/winner")
 async def get_auction_winner(auction_id: str):
-    winner = await get_winner(auction_id)
-    if winner is None:
-        return {"message": "No winner yet or no bids"}
-    return winner
+    result = await get_winner(auction_id)
+    if result is None:
+        return {"message": "No hay pujas registradas en esta subasta."}
+    return result
+
